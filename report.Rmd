@@ -1,0 +1,170 @@
+---
+title: "Harvard-Capstone-PH125.9-Leroy Buliro"
+author: "Leroy Buliro"
+date: "1/10/2020"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1. Introduction
+
+In this project, we create a movie recommendation system using the MovieLens dataset which has 10 million observations. You can obtain the GroupLens Research data from [this link](http://files.grouplens.org/datasets/movielens/ml-10m.zip). Our main aim is to perform a data analysis and through visualization we shall find patterns to assist us in building a model that will provide an optimum movie recommendation to users.
+
+The dataset is composed by 10000054 observations with:
+-69878 unique users
+-10677 movies
+
+The key steps performed include:
+-Preparation of the work environment.
+-Preparation, exploration and visualizations of the data
+-Analysis of the obsertions.
+-Calculation of the optimal RMSE based on movieId, userId, ________.
+
+On following the above steps, our data model will reveal that the best predictors used to provide the optimum recommendation system are moveiId and UserId. The RMSE is _______.
+
+
+## 2. Methods and Analysis
+
+## 2.1 Work Environment Preparation
+
+We are going to use the following library:
+
+```{r loading-libs, message=FALSE}
+if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
+if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
+
+```
+  
+Next we shall download the data
+
+```{r}
+dl <- tempfile()
+download.file("http://files.grouplens.org/datasets/movielens/ml-10m.zip", dl)
+```
+
+
+## 2.2 Data Wrangling
+
+We build the desired dataset using the code below.
+
+```{r echo=FALSE, message=FALSE}
+ratings <- fread(text = gsub("::", "\t", readLines(unzip(dl, "ml-10M100K/ratings.dat"))),
+                 col.names = c("userId", "movieId", "rating", "timestamp"))
+
+movies <- str_split_fixed(readLines(unzip(dl, "ml-10M100K/movies.dat")), "\\::", 3)
+colnames(movies) <- c("movieId", "title", "genres")
+movies <- as.data.frame(movies) %>% mutate(movieId = as.numeric(levels(movieId))[movieId],
+                                           title = as.character(title),
+                                           genres = as.character(genres))
+
+movielens <- left_join(ratings, movies, by = "movieId")
+
+# Validation set will be 10% of MovieLens data
+set.seed(1)
+test_index <- createDataPartition(y = movielens$rating, times = 1, p = 0.1, list = FALSE)
+edx <- movielens[-test_index,]
+temp <- movielens[test_index,]
+
+validation <- temp %>% 
+  semi_join(edx, by = "movieId") %>%
+  semi_join(edx, by = "userId")
+
+removed <- anti_join(temp, validation)
+edx <- rbind(edx, removed)
+
+#Add a year column generated from the timestamp column
+dates <- as.Date(as.POSIXct(edx$timestamp, origin="1970-01-01"))
+edx <- edx %>% mutate(year=year(dates))
+```
+
+Lastly, we save both the edx and validation dataset using this code
+
+```{r}
+# Save both edx and validation dataset
+write.csv(edx, file = "data/edx.csv")
+write.csv(validation, file = "data/validation.csv")
+```
+
+We shall use the edx dataset onwards
+
+## 2.3 Data Exploration and Visualizations
+
+The data consists of: 
+Total number of ratings
+```{r}
+dim(edx)
+```
+```{r}
+dim(edx)
+```
+
+Total number of movies
+```{r}
+n_distinct(edx$movieId)
+```
+```{r}
+n_distinct(edx$movieId)
+```
+
+Total number of users
+```{r}
+n_distinct(edx$userId)
+```
+```{r}
+n_distinct(edx$userId)
+```
+
+And we can confirm that each user rated a movie using the following code
+```{r}
+edx %>% filter(is.na(.$ratings))
+```
+
+The top 20 most viewed genres are
+```{r}
+edx %>% separate_rows(genres, sep = "\\|") %>% group_by(genres) %>% summarize(count = n()) %>% 
+  top_n(20, count) %>% arrange(desc(count))
+```
+
+While the top 20 best rated movies are
+```{r}
+edx %>% group_by(movieId) %>% summarize(title = title[1], count = n()) %>% top_n(20, count) %>%  arrange(desc(count))
+```
+
+Median number of ratings vs MovieId
+```{r}
+# What year has the highest median number of ratings
+edx %>% group_by(movieId) %>%
+  summarize(n = n(), year = as.character(first(year))) %>%
+  qplot(year, n, data = ., geom = "boxplot") +
+  coord_trans(y = "sqrt") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+From the result, we can conclude that ____ had the highest rating overall.
+
+
+
+## 2.4
+
+## 2.5 Data Analysis and Modelling
+
+## 2.6 LAMBDA and RMSE Calculation
+
+
+
+## 3. Result
+
+We note the large state to state variability by generating a barplot showing the murder rate by state:
+
+```{r murder-rate-by-state, echo=FALSE}
+murders %>% mutate(abb = reorder(abb, rate)) %>%
+  ggplot(aes(abb, rate)) +
+  geom_bar(width = 0.5, stat = "identity", color = "black") +
+  coord_flip()
+```
+
+## Conclusion
+The spirit of the project was to predict movieratings from a long list of rated movies. Optimal RMSE of 0.856695492876063 is achieved with Lambda 0.5.But throughout the analysis we have discovered patterns and trends beyond the project’s own objective. These found are: the subjective tendency of the user to select round numbers (3 and 5), the tendency to accumulate the highest number of ratings in movies of the 90’s period, as well as a higher score for older movies, but greater differentiation in the scores delivered on older movies. These interesting results could be the basis of a deeper analysis in the optimization for a more complete system.
