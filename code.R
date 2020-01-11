@@ -6,6 +6,7 @@
 if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
 if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
 if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
+if(!require(lubridate)) install.packages("lubridate", repos = "http://cran.us.r-project.org")
 if(!require(knitr)) install.packages("knitr", repos = "http://cran.us.r-project.org")
 if(!require(rmarkdown)) install.packages("rmarkdown", repos = "http://cran.us.r-project.org")
 
@@ -59,7 +60,8 @@ rm(dl, ratings, movies, test_index, temp, movielens, removed)
 
 # Add a year column generated from timestamp
 dates <- as.Date(as.POSIXct(edx$timestamp, origin="1970-01-01"))
-edx <- edx %>% mutate(year=year(dates))
+edx <- edx %>% mutate(year=year(dates), month=month(dates))
+names(edx)
 
 # Save both edx and validation dataset
 write.csv(edx, file = "data/edx.csv")
@@ -87,10 +89,9 @@ edx %>% group_by(movieId) %>%
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 # Genre avarages
-
 edx %>% group_by(genres) %>%
   summarize(n = n(), avg = mean(rating), se = sd(rating)/sqrt(n())) %>%
-  filter(n >= 1000) %>% 
+  filter(n >= 100000) %>% 
   mutate(genres = reorder(genres, avg)) %>%
   ggplot(aes(x = genres, y = avg, ymin = avg - 2*se, ymax = avg + 2*se)) + 
   geom_point() +
@@ -98,32 +99,15 @@ edx %>% group_by(genres) %>%
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 # 
-
-edx <- mutate(movielens, date = as_datetime(timestamp))
+edx <- mutate(edx, date = as_datetime(timestamp))
 
 edx %>% mutate(week = round_date(date, "week")) %>%
   group_by(week) %>% summarize(avg = mean(rating)) %>% 
   ggplot(aes(week, avg)) + geom_point() + geom_smooth()
 
-#
-edx %>% 
-  group_by(movieId) %>%
-  summarize(n = n(), years = 2018 - first(year), title = title[1], rating = mean(rating)) %>%
-  mutate(rate = n/years) %>%
-  top_n(20, rate) %>%
-  arrange(desc(rate))
-
-edx %>% 
-  group_by(movieId) %>%
-  summarize(n = n(), years = 2018 - first(year), title = title[1], rating = mean(rating)) %>%
-  mutate(rate = n/years) %>%
-  ggplot(aes(rate, rating)) +
-  geom_point() +
-  geom_smooth()
-
 # Let's look at some of the general properties of the data to better understand the challenge.
 # The first thing we notice is that some movies get rated more than others.
-# Here's the distribution.
+# Here's the distribution. A normal distribution
 edx %>% 
   dplyr::count(movieId) %>% 
   ggplot(aes(n)) + 
@@ -142,10 +126,9 @@ edx %>%
 
 # Create a test set to assess the accuracy of the models we implement,
 set.seed(1)
-test_index <- createDataPartition(y = edx$rating, times = 1,
-                                  p = 0.2, list = FALSE)
-train_set <- movielens[-test_index,]
-test_set <- movielens[test_index,]
+test_index <- createDataPartition(y = edx$rating, times = 1, p = 0.2, list = FALSE)
+train_set <- edx[-test_index,]
+test_set <- edx[test_index,]
 
 # To make sure we don't include users and movies in the test set that do not appear in the training set, we removed these using the semi_join function,
 test_set <- test_set %>% 
@@ -159,6 +142,7 @@ test_set <- test_set %>%
 RMSE <- function(true_ratings, predicted_ratings){
   sqrt(mean((true_ratings - predicted_ratings)^2))
 }
+
 # Now we're ready to build models and compare them to each other.
 
 # We're going to predict the same rating for all movies, regardless of the user and movie.
@@ -181,17 +165,13 @@ RMSE(test_set$rating, predictions)
 # Because as we go along we will be comparing different approaches, we're going to create a table that's going to store the results that we obtain as we go along.
 rmse_results <- data_frame(method = "Just the average", RMSE = naive_rmse)
 
-# we can augment our previous model by adding a term, b_i, to represent the average rating for movie i.
-# In statistics, we usually call these b's, effects. But in the Netflix challenge papers, they refer to them as "bias," thus the b in the notation.
-# fit <- lm(rating ~ as.factor(userId), data = movielens). This is b_i but we will not run it because there are thousands of b's, each movie gets one parameter, one estimate. So the lm function will be very slow here
-# we know that the least squares estimate, b-hat_i, is just the average of y_u,i minus the overall mean for each movie, i.
-# So we can compute them using this code. we're going to drop the hat notation in the code to represent the estimates going forward, just to make the code cleaner.
 mu <- mean(train_set$rating) 
 movie_avgs <- train_set %>% 
   group_by(movieId) %>% 
   summarize(b_i = mean(rating - mu))
 
 movie_avgs %>% qplot(b_i, geom ="histogram", bins = 10, data = ., color = I("black"))
+
 # We can see that these estimates vary substantially, not surprisingly. Some movies are good. Other movies are bad.
 
 # Remember, the overall average is about 3.5. So a b i of 1.5 implies a perfect five-star rating.
