@@ -67,6 +67,7 @@ names(edx)
 write.csv(edx, file = "data/edx.csv")
 write.csv(validation, file = "data/validation.csv")
 
+
 # Number of movies and users in the edx dataset
 n_distinct(edx$movieId)
 n_distinct(edx$userId)
@@ -75,11 +76,15 @@ n_distinct(edx$userId)
 edx %>% filter(is.na(.$ratings))
 
 # Top 20 most viewed genres
-edx %>% separate_rows(genres, sep = "\\|") %>% group_by(genres) %>% summarize(count = n()) %>%
+edx %>% separate_rows(genres, sep = "\\|") %>% group_by(genres) %>% 
+  summarize(count = n()) %>% top_n(20, count) %>%  arrange(desc(count))
+
+edx %>% group_by(genres) %>% summarize(count = n()) %>% 
   top_n(20, count) %>%  arrange(desc(count))
 
 # Top 20 most viewed movies
-edx %>% group_by(movieId) %>% summarize(title = title[1], count = n()) %>% top_n(20, count) %>%  arrange(desc(count))
+edx %>% group_by(movieId) %>% summarize(title = title[1], count = n()) %>% 
+  top_n(20, count) %>%  arrange(desc(count)) %>% select(-movieId) %>% as.data.frame()
 
 # What year has the highest median number of ratings
 edx %>% group_by(movieId) %>%
@@ -157,11 +162,6 @@ mu_hat
 naive_rmse <- RMSE(test_set$rating, mu_hat)
 naive_rmse
 
-# Note, if you plug in any other number, you get a higher RMSE.
-# That's what's supposed to happen, because we know that the average minimizes the residual mean squared error when using this model.
-predictions <- rep(2.5, nrow(test_set))
-RMSE(test_set$rating, predictions)
-
 # Because as we go along we will be comparing different approaches, we're going to create a table that's going to store the results that we obtain as we go along.
 rmse_results <- data_frame(method = "Just the average", RMSE = naive_rmse)
 
@@ -186,18 +186,21 @@ rmse_results <- bind_rows(rmse_results,
                                      RMSE = model_1_rmse ))
 
 rmse_results %>% knitr::kable()
+
 # Our residual mean squared error did drop a little bit.
 # We already see an improvement. Now can we make it better?
 
 # How about users? Are different users different in terms of how they rate movies? 
 # To explore the data, let's compute the average rating for user, u, for those that have rated over 100 movies.
 # histogram of those values
+
 train_set %>% 
   group_by(userId) %>% 
   summarize(b_u = mean(rating)) %>% 
   filter(n()>=100) %>%
   ggplot(aes(b_u)) + 
   geom_histogram(bins = 30, color = "black")
+
 # Note that there is substantial variability across users, as well. Some users are very cranky.
 # And others love every movie they watch, while others are somewhere in the middle.
 # Implement user variability to our model which is b_u
@@ -223,9 +226,17 @@ predicted_ratings <- test_set %>%
   .$pred
 
 model_2_rmse <- RMSE(predicted_ratings, test_set$rating)
-rmse_results <- bind_rows(rmse_results,
-                          data_frame(method="Movie + User Effects Model",  
+
+rmse_results <- bind_rows(rmse_results, data_frame(method="Movie + User Effects Model",  
                                      RMSE = model_2_rmse ))
 rmse_results %>% knitr::kable()
 # We see that now we obtain a further improvement.
 # Our residual mean squared error dropped down to about 0.88. This is the score that Netflix awarded the competition winner.
+
+# Can we make it even better?
+#
+# (Visualize time variability claim)
+#
+# From the graph above we can see that some movies are watched more during certain months.
+# A time variability. We shall now impliment this in our model.
+
