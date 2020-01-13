@@ -13,8 +13,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 In this project, we create a movie recommendation system using the MovieLens dataset which has 10 million observations. You can obtain the GroupLens Research data from [this link](http://files.grouplens.org/datasets/movielens/ml-10m.zip). Our main aim is to perform a data analysis and through visualization we shall find patterns to assist us in building a model that will provide an optimum movie recommendation to users.
 
-The dataset is composed by 10000054 observations with:
-- 69878 unique users
+The dataset is composed of 10000054 observations with:
+- 69878 unique users and
 - 10677 movies
 
 The key steps performed include:
@@ -32,7 +32,7 @@ On following the above steps, our data model will reveal that the best predictor
 
 We are going to use the following library:
 
-```{r loading-libs, message=FALSE}
+```{r loading-libs, message=FALSE, eval=FALSE}
 if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
 if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
 if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
@@ -43,7 +43,7 @@ if(!require(rmarkdown)) install.packages("rmarkdown", repos = "http://cran.us.r-
   
 Next we shall download the data
 
-```{r}
+```{r eval=FALSE}
 dl <- tempfile()
 download.file("http://files.grouplens.org/datasets/movielens/ml-10m.zip", dl)
 ```
@@ -53,7 +53,7 @@ download.file("http://files.grouplens.org/datasets/movielens/ml-10m.zip", dl)
 
 We build the desired dataset using the code below.
 
-```{r echo=FALSE, message=FALSE}
+```{r echo=FALSE, message=FALSE, eval=FALSE}
 ratings <- fread(text = gsub("::", "\t", readLines(unzip(dl, "ml-10M100K/ratings.dat"))),
                  col.names = c("userId", "movieId", "rating", "timestamp"))
 
@@ -89,17 +89,17 @@ We shall use the edx dataset onwards
 
 The data consists of: 
 Total number of ratings
-```{r echo=TRUE}
+```{r}
 dim(edx)
 ```
 
 Total number of movies
-```{r echo=TRUE}
+```{r}
 n_distinct(edx$movieId)
 ```
 
 Total number of users
-```{r echo=TRUE}
+```{r}
 n_distinct(edx$userId)
 ```
 
