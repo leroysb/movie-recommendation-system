@@ -1,5 +1,5 @@
 ---
-title: "Harvard-Capstone-PH125.9-Leroy Buliro"
+title: "BUILDING A MOVIE RECOMMENDATION SYSTEM USING THE MOVIELENS RESEARCH DATA"
 author: "Leroy Buliro"
 date: "1/10/2020"
 output: github_document
@@ -84,6 +84,7 @@ edx <- edx %>% mutate(year=year(dates), month=month(dates))
 
 We shall use the edx dataset we just created onwards to train our model.
 
+
 ### 2.3 Data Exploration and Visualizations
 
 The edx dataset consists of:  
@@ -123,7 +124,7 @@ From the figure below, we can conclude that **1997** had the highest number of r
 edx %>% group_by(movieId) %>% summarize(n = n(), year = as.character(first(year))) %>% qplot(year, n, data = ., geom = "boxplot") + coord_trans(y = "sqrt") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 
-And the genre **Drama/War** with the highest overall ratings.  
+And the genre **Drama/War** with the highest average ratings.  
 ```{r echo=FALSE}
 edx %>% group_by(genres) %>% summarize(n = n(), avg = mean(rating), se = sd(rating)/sqrt(n())) %>% filter(n >= 100000) %>% mutate(genres = reorder(genres, avg)) %>% ggplot(aes(x = genres, y = avg, ymin = avg - 2*se, ymax = avg + 2*se)) + geom_point() + geom_errorbar() + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
@@ -231,5 +232,7 @@ We see that now we obtain a further improvement. Our residual mean squared error
 rmse_results %>% knitr::kable()
 ```
 
+
 ## 4. CONCLUSION
-The spirit of the project was to predict movie ratings from a long list of rated movies where an optimal RMSE of 0.8431355 is achieved. Throughout the analysis we have discovered patterns and trends beyond the project’s own objective. 
+
+The main objective of the project was to predict movie ratings from a long list of rated movies where we achieved an optimal RMSE of **0.8431355**. Throughout the analysis, some important trends were discovered, some of which were used in modelling the data like user and movie variability. Can we make the model even more better? A challenge worthy of research. 
