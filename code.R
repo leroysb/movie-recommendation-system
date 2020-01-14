@@ -233,10 +233,4 @@ rmse_results %>% knitr::kable()
 # We see that now we obtain a further improvement.
 # Our residual mean squared error dropped down to about 0.88. This is the score that Netflix awarded the competition winner.
 
-# Can we make it even better?
-#
-# (Visualize time variability claim)
-#
-# From the graph above we can see that some movies are watched more during certain months.
-# A time variability. We shall now impliment this in our model.
 
